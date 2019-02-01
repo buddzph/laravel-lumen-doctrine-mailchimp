@@ -12,4 +12,12 @@ $router->group(['prefix' => 'mailchimp', 'namespace' => 'MailChimp'], function (
         $router->put('/{listId}', 'ListsController@update');
         $router->delete('/{listId}', 'ListsController@remove');
     });
+
+    // Members under lists
+    $router->group(['prefix' => 'members'], function () use ($router) {
+        $router->post('/', 'MembersController@create');
+        $router->get('/{memberId}', 'MembersController@show');
+        $router->put('/{memberId}', 'MembersController@update');
+        $router->delete('/{memberId}', 'MembersController@remove');
+    });
 });
