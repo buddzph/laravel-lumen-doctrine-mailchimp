@@ -41,9 +41,9 @@ class MembersController extends Controller
     public function create(Request $request): JsonResponse
     {
         // Instantiate entity
-        $list = new MailChimpMember($request->all());
+        $member = new MailChimpMember($request->all());
         // Validate entity
-        $validator = $this->getValidationFactory()->make($list->toMailChimpArray(), $list->getValidationRules());
+        $validator = $this->getValidationFactory()->make($member->toMailChimpArray(), $member->getValidationRules());
 
         if ($validator->fails()) {
             // Return error response if validation failed
@@ -55,18 +55,18 @@ class MembersController extends Controller
 
         try {
             // Save list into db
-            $this->saveEntity($list);
+            $this->saveEntity($member);
             // Save list into MailChimp
-            $response = $this->mailChimp->post('lists/'.$request->mail_chimp_id.'/members', $list->toMailChimpArray());
+            $response = $this->mailChimp->post('lists/'.$request->mail_chimp_id.'/members', $member->toMailChimpArray());
             // Set MailChimp id, MailChimp Member Id on the list and save list into db
-            $this->saveEntity($list->setMailChimpId($request->mail_chimp_id));
-            $this->saveEntity($list->setMailChimpMemberId($response->get('id')));
+            $this->saveEntity($member->setMailChimpId($request->mail_chimp_id));
+            $this->saveEntity($member->setMailChimpMemberId($response->get('id')));
         } catch (Exception $exception) {
             // Return error response if something goes wrong
             return $this->errorResponse(['message' => $exception->getMessage()]);
         }
 
-        return $this->successfulResponse($list->toArray());
+        return $this->successfulResponse($member->toArray());
     }
 
     /**
@@ -78,17 +78,17 @@ class MembersController extends Controller
      */
     public function show(string $memberId): JsonResponse
     {
-        /** @var \App\Database\Entities\MailChimp\MailChimpMember|null $list */
-        $list = $this->entityManager->getRepository(MailChimpMember::class)->find($memberId);
+        /** @var \App\Database\Entities\MailChimp\MailChimpMember|null $member */
+        $member = $this->entityManager->getRepository(MailChimpMember::class)->find($memberId);
 
-        if ($list === null) {
+        if ($member === null) {
             return $this->errorResponse(
                 ['message' => \sprintf('MailChimpMember[%s] not found', $memberId)],
                 404
             );
         }
 
-        return $this->successfulResponse($list->toArray());
+        return $this->successfulResponse($member->toArray());
     }
 
     /**
@@ -101,10 +101,10 @@ class MembersController extends Controller
      */
     public function update(Request $request, string $memberId): JsonResponse
     {
-        /** @var \App\Database\Entities\MailChimp\MailChimpMember|null $list */
-        $list = $this->entityManager->getRepository(MailChimpMember::class)->find($memberId);
+        /** @var \App\Database\Entities\MailChimp\MailChimpMember|null $member */
+        $member = $this->entityManager->getRepository(MailChimpMember::class)->find($memberId);
 
-        if ($list === null) {
+        if ($member === null) {
             return $this->errorResponse(
                 ['message' => \sprintf('MailChimpMember[%s] not found', $memberId)],
                 404
@@ -112,10 +112,10 @@ class MembersController extends Controller
         }
 
         // Update list properties
-        $list->fill($request->all());
+        $member->fill($request->all());
 
         // Validate entity
-        $validator = $this->getValidationFactory()->make($list->toMailChimpArray(), $list->getValidationRules());
+        $validator = $this->getValidationFactory()->make($member->toMailChimpArray(), $member->getValidationRules());
 
         if ($validator->fails()) {
             // Return error response if validation failed
@@ -127,14 +127,14 @@ class MembersController extends Controller
 
         try {
             // Update list into database
-            $this->saveEntity($list);
+            $this->saveEntity($member);
             // Update list into MailChimp
-            $this->mailChimp->put(\sprintf('lists/'.$list->getMailChimpId().'/members/%s', $list->getMailChimpMemberId()), $list->toMailChimpArray());
+            $this->mailChimp->put(\sprintf('lists/'.$member->getMailChimpId().'/members/%s', $member->getMailChimpMemberId()), $member->toMailChimpArray());
         } catch (Exception $exception) {
             return $this->errorResponse(['message' => $exception->getMessage()]);
         }
 
-        return $this->successfulResponse($list->toArray());
+        return $this->successfulResponse($member->toArray());
     }
 
     /**
@@ -146,10 +146,10 @@ class MembersController extends Controller
      */
     public function remove(string $memberId): JsonResponse
     {
-        /** @var \App\Database\Entities\MailChimp\MailChimpMember|null $list */
-        $list = $this->entityManager->getRepository(MailChimpMember::class)->find($memberId);
+        /** @var \App\Database\Entities\MailChimp\MailChimpMember|null $member */
+        $member = $this->entityManager->getRepository(MailChimpMember::class)->find($memberId);
 
-        if ($list === null) {
+        if ($member === null) {
             return $this->errorResponse(
                 ['message' => \sprintf('MailChimpMember[%s] not found', $memberId)],
                 404
@@ -158,10 +158,10 @@ class MembersController extends Controller
 
         try {
             // Remove member from MailChimp
-            $this->mailChimp->delete(\sprintf('lists/'.$list->getMailChimpId().'/members/%s', $list->getMailChimpMemberId()));
+            $this->mailChimp->delete(\sprintf('lists/'.$member->getMailChimpId().'/members/%s', $member->getMailChimpMemberId()));
 
             // Remove member from database
-            $this->removeEntity($list);
+            $this->removeEntity($member);
         } catch (Exception $exception) {
             return $this->errorResponse(['message' => $exception->getMessage()]);
         }
